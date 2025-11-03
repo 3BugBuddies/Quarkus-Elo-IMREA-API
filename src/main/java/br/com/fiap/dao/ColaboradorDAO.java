@@ -3,23 +3,21 @@ package br.com.fiap.dao;
 import br.com.fiap.to.ColaboradorTO;
 import br.com.fiap.to.ColaboradorTO;
 
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class ColaboradorDAO {
 
     /**
      * Insere um novo colaborador no banco de dados
+     *
      * @param colaboradorTO objeto contendo os dados do colaborador a ser inserido
      * @return Colaborador salvo confirmando o sucessod da operação ou nulo
      */
 
     public ColaboradorTO save(ColaboradorTO colaboradorTO) {
 
-        String sql = "insert into T_ELO_COLABORADOR (nc_nome_completo, dt_data_nascimento, dc_cpf, tl_telefone, em_email, un_unidade) values (?,?,?,?,?,?)";
+        String sql = "insert into T_ELO_COLABORADOR (nc_nome_completo, dt_data_nascimento, dc_cpf, tl_telefone, em_email,url_foto, un_unidade) values (?,?,?,?,?,?,?)";
 
         try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
             ps.setString(1, colaboradorTO.getNomeCompleto());
@@ -27,29 +25,35 @@ public class ColaboradorDAO {
             ps.setString(3, colaboradorTO.getCpf());
             ps.setString(4, colaboradorTO.getTelefone());
             ps.setString(5, colaboradorTO.getEmail());
-            ps.setString(6, colaboradorTO.getUnidade());
+            if (colaboradorTO.getUrlFoto() != null) {
+                ps.setString(6, colaboradorTO.getUrlFoto());
+            } else {
+                ps.setNull(6, Types.VARCHAR);
+            }
+            ps.setString(7, colaboradorTO.getUnidade());
 
             if (ps.executeUpdate() > 0) {
                 return colaboradorTO;
-            } else {
-                return null;
             }
+            return null;
         } catch (SQLException e) {
             System.out.println("Erro ao Salvar: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
-        return null;
+
     }
 
     /**
      * Altera os dados de um colaborador no banco de dados
+     *
      * @param colaboradorTO objeto contendo os novos dados do colaborador
      * @return mensagem informando o resultado da operação
      */
     public ColaboradorTO update(ColaboradorTO colaboradorTO) {
 
-        String sql = "UPDATE T_ELO_COLABORADOR set nc_nome_completo=?, dt_data_nascimento=?, dc_cpf=?, tl_telefone=?, em_email=?, un_unidade=? where id_colaborador=?";
+        String sql = "UPDATE T_ELO_COLABORADOR set nc_nome_completo=?, dt_data_nascimento=?, dc_cpf=?, tl_telefone=?, em_email=?,url_foto=?, un_unidade=? where id_colaborador=?";
 
         try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
             ps.setString(1, colaboradorTO.getNomeCompleto());
@@ -57,24 +61,29 @@ public class ColaboradorDAO {
             ps.setString(3, colaboradorTO.getCpf());
             ps.setString(4, colaboradorTO.getTelefone());
             ps.setString(5, colaboradorTO.getEmail());
-            ps.setString(6, colaboradorTO.getUnidade());
-            ps.setLong(7, colaboradorTO.getIdColaborador());
+            if (colaboradorTO.getUrlFoto() != null) {
+                ps.setString(6, colaboradorTO.getUrlFoto());
+            } else {
+                ps.setNull(6, Types.VARCHAR);
+            }
+            ps.setString(7, colaboradorTO.getUnidade());
+            ps.setLong(8, colaboradorTO.getIdColaborador());
             if (ps.executeUpdate() > 0) {
                 return colaboradorTO;
-            } else {
-                return null;
             }
+            return null;
 
         } catch (SQLException e) {
             System.out.println("Erro ao Salvar: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
-        return null;
     }
 
     /**
      * Exclui um colaborador do banco de dados
+     *
      * @param id ID do colaborador a ser excluído
      * @return mensagem informando o resultado da operação
      */
@@ -84,18 +93,17 @@ public class ColaboradorDAO {
         try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             System.out.println("Erro ao excluir:" + e.getMessage());
-        }
-        finally {
+            throw new RuntimeException(e.getMessage());
+        } finally {
             ConnectionFactory.closeConnection();
         }
-        return false;
     }
 
     /**
      * Busca todos os colaboradores no banco de dados
+     *
      * @return lista de objetos de ColaboradorTO com todos os colaboradores ou null se não encontrar
      */
     public ArrayList<ColaboradorTO> findAll() {
@@ -112,14 +120,17 @@ public class ColaboradorDAO {
                     colaboradorEncontrado.setCpf(rs.getString("dc_cpf"));
                     colaboradorEncontrado.setDataNascimento(rs.getDate("dt_data_nascimento").toLocalDate());
                     colaboradorEncontrado.setEmail(rs.getString("em_email"));
+                    colaboradorEncontrado.setUrlFoto(rs.getString("url_foto"));
                     colaboradorEncontrado.setUnidade(rs.getString("un_unidade"));
                     colaboradores.add(colaboradorEncontrado);
-                }}else{
+                }
+            } else {
                 return null;
             }
         } catch (SQLException e) {
             System.out.println("Erro na consulta: " + e.getMessage());
-        }finally {
+            throw new RuntimeException(e.getMessage());
+        } finally {
             ConnectionFactory.closeConnection();
         }
         return colaboradores;
@@ -128,6 +139,7 @@ public class ColaboradorDAO {
 
     /**
      * Busca um colaborador no banco de dados
+     *
      * @param id O ID do colaborador a ser buscado
      * @return objeto ColaboradorTO com os dados do colaborador ou null se não encontrar
      */
@@ -145,13 +157,15 @@ public class ColaboradorDAO {
                 colaboradorEncontrado.setCpf(rs.getString("dc_cpf"));
                 colaboradorEncontrado.setDataNascimento(rs.getDate("dt_data_nascimento").toLocalDate());
                 colaboradorEncontrado.setEmail(rs.getString("em_email"));
+                colaboradorEncontrado.setUrlFoto(rs.getString("url_foto"));
                 colaboradorEncontrado.setUnidade(rs.getString("un_unidade"));
-            }else{
+            } else {
                 return null;
             }
         } catch (SQLException e) {
             System.out.println("Erro na consulta: " + e.getMessage());
-        }finally {
+            throw new RuntimeException(e.getMessage());
+        } finally {
             ConnectionFactory.closeConnection();
         }
         return colaboradorEncontrado;
@@ -159,6 +173,7 @@ public class ColaboradorDAO {
 
     /**
      * Busca um colaborador específico no banco de dados a partir do CPF
+     *
      * @param cpf do colaborador a ser buscado
      * @return objeto colaboradorTO com os dados do colaborador encontrado ou null
      */
@@ -176,12 +191,14 @@ public class ColaboradorDAO {
                 colaboradorEncontrado.setDataNascimento(rs.getDate("dt_data_nascimento").toLocalDate());
                 colaboradorEncontrado.setTelefone(rs.getString("tl_telefone"));
                 colaboradorEncontrado.setEmail(rs.getString("em_email"));
+                colaboradorEncontrado.setUrlFoto(rs.getString("url_foto"));
                 colaboradorEncontrado.setUnidade(rs.getString("un_unidade"));
-            }else {
+            } else {
                 return null;
             }
         } catch (SQLException e) {
             System.out.println("Erro no comando SQL " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }

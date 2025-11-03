@@ -1,30 +1,45 @@
 package br.com.fiap.bo;
 
 import br.com.fiap.dao.ProfissionalSaudeDAO;
+import br.com.fiap.exception.ProfissionalSaudeException;
 import br.com.fiap.to.ProfissionalSaudeTO;
 
 import java.util.ArrayList;
 
 public class ProfissionalSaudeBO {
-    public ProfissionalSaudeTO save(ProfissionalSaudeTO profissionalSaudeTO) {
-        String telefone = profissionalSaudeTO.getTelefone();
-        String cpf = profissionalSaudeTO.getCpf();
+    public ProfissionalSaudeTO save(ProfissionalSaudeTO profissionalSaudeTO) throws ProfissionalSaudeException {
+        String telefone = profissionalSaudeTO.getTelefone().replace("(", "").replace("-", "").replace(")", "").replace(" ", "");
+        String cpf = profissionalSaudeTO.getCpf().replace(".", "").replace("-", "");
 
-        profissionalSaudeTO.setCpf(cpf.replace(".", "").replace("-", ""));
-        profissionalSaudeTO.setTelefone(telefone.replace("(", "").replace("-", "").replace(")", "").replace(" ", ""));
+        profissionalSaudeTO.setCpf(cpf);
+        profissionalSaudeTO.setTelefone(telefone);
 
         ProfissionalSaudeDAO profissionalSaudeDAO = new ProfissionalSaudeDAO();
+        if(profissionalSaudeDAO.findByCpf(cpf) != null) {
+            throw new ProfissionalSaudeException("Já existe um profissional de saúde cadastrado com o CPF informado");
+        }
+
         return profissionalSaudeDAO.save(profissionalSaudeTO);
     }
 
-    public ProfissionalSaudeTO update(ProfissionalSaudeTO profissionalSaudeTO) {
-        String telefone = profissionalSaudeTO.getTelefone();
-        String cpf = profissionalSaudeTO.getCpf();
+    public ProfissionalSaudeTO update(ProfissionalSaudeTO profissionalSaudeTO) throws ProfissionalSaudeException {
+        String telefone = profissionalSaudeTO.getTelefone().replace("(", "").replace("-", "").replace(")", "").replace(" ", "");
+        String cpf = profissionalSaudeTO.getCpf().replace(".", "").replace("-", "");
 
-        profissionalSaudeTO.setCpf(cpf.replace(".", "").replace("-", ""));
-        profissionalSaudeTO.setTelefone(telefone.replace("(", "").replace("-", "").replace(")", "").replace(" ", ""));
+        profissionalSaudeTO.setCpf(cpf);
+        profissionalSaudeTO.setTelefone(telefone);
 
         ProfissionalSaudeDAO profissionalSaudeDAO = new ProfissionalSaudeDAO();
+
+        if(profissionalSaudeDAO.findById(profissionalSaudeTO.getIdProfissionalSaude()) == null) {
+            throw new ProfissionalSaudeException("Não existe nenhum profissional de saúde com o ID informado");
+        }
+        ProfissionalSaudeTO profissionalEncontrado = profissionalSaudeDAO.findByCpf(cpf);
+
+        if (profissionalEncontrado != null && !profissionalEncontrado.getIdProfissionalSaude().equals(profissionalSaudeTO.getIdProfissionalSaude())) {
+            throw new ProfissionalSaudeException("O CPF informado já pertence a outro profissional de saúde.");
+        }
+
         return profissionalSaudeDAO.update(profissionalSaudeTO);
     }
     public boolean delete(Long id) {

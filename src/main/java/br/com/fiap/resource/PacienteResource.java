@@ -67,6 +67,16 @@ public class PacienteResource {
     }
 
     @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findById(@PathParam("id") Long id) {
+        PacienteTO resultado = pacienteBO.findById(id);
+        if (resultado == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } return Response.status(Response.Status.OK).entity(resultado).build();
+    }
+
+    @GET
     @Path("/acompanhante/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response findByAcompanhante(@PathParam("id") Long id) {
@@ -81,14 +91,5 @@ public class PacienteResource {
         }
     }
 
-    @GET
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findById(@PathParam("id") Long id) {
-        PacienteTO resultado = pacienteBO.findById(id);
-        if (resultado == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        } return Response.status(Response.Status.OK).entity(resultado).build();
-    }
 
 }

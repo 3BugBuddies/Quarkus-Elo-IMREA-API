@@ -12,6 +12,7 @@ import java.util.ArrayList;
 public class AtendimentoDAO {
     /**
      * Insere um novo atendimento no banco de dados
+     *
      * @param atendimentoTO objeto contendo os dados do atendimento a ser inserido
      * @return objeto AtendimentoTO com os dados do atendimento inserido ou null se falhar
      */
@@ -27,23 +28,22 @@ public class AtendimentoDAO {
             ps.setTime(5, Time.valueOf(atendimentoTO.getHora()));
             ps.setString(6, atendimentoTO.getLocal());
             ps.setString(7, atendimentoTO.getStatus().name());
-
             if (ps.executeUpdate() > 0) {
                 return atendimentoTO;
-            } else {
-                return null;
             }
-
+            return null;
         } catch (SQLException e) {
             System.out.println("Erro ao Salvar: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
-        return null;
+
     }
 
     /**
      * Altera os dados de um atendimento no banco de dados
+     *
      * @param atendimentoTO objeto contendo os novos dados do atendimento
      * @return objeto AtendimentoTO com os dados do atendimento atualizado ou null se falhar
      */
@@ -62,20 +62,20 @@ public class AtendimentoDAO {
 
             if (ps.executeUpdate() > 0) {
                 return atendimentoTO;
-            } else {
-                return null;
             }
-
+            return null;
         } catch (SQLException e) {
             System.out.println("Erro ao Alterar: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
-        return null;
+
     }
 
     /**
      * Exclui um atendimento do banco de dados
+     *
      * @param idAtendimento ID do atendimento a ser excluído
      * @return true se excluído com sucesso, false caso contrário
      */
@@ -86,17 +86,17 @@ public class AtendimentoDAO {
         try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
             ps.setLong(1, idAtendimento);
             return ps.executeUpdate() > 0;
-        }
-        catch (SQLException e) {
-            System.out.println("Erro no comando SQL " + e.getMessage());
+        } catch (SQLException e) {
+            System.out.println("Erro ao Excluir " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
-        return false;
     }
 
     /**
      * Busca todos os atendimentos no banco de dados
+     *
      * @return lista de objetos de AtendimentoTO com todos os atendimentos ou null se não encontrar
      */
     public ArrayList<AtendimentoTO> findAll() {
@@ -122,6 +122,7 @@ public class AtendimentoDAO {
             }
         } catch (SQLException e) {
             System.out.println("Erro na consulta: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
@@ -130,6 +131,7 @@ public class AtendimentoDAO {
 
     /**
      * Busca um atendimento no banco de dados
+     *
      * @param idAtendimento ID do atendimento a ser buscado
      * @return objeto AtendimentoTO com os dados do atendimento ou null se não encontrar
      */
@@ -161,6 +163,7 @@ public class AtendimentoDAO {
             }
         } catch (SQLException e) {
             System.out.println("Erro no comando SQL " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
@@ -169,6 +172,7 @@ public class AtendimentoDAO {
 
     /**
      * Busca todos os atendimentos de um paciente
+     *
      * @param idPaciente ID do paciente
      * @return lista de objetos com os dados dos atendimentos encontrados
      */
@@ -180,7 +184,7 @@ public class AtendimentoDAO {
         try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
             ps.setLong(1, idPaciente);
             ResultSet rs = ps.executeQuery();
-            if(rs != null){
+            if (rs != null) {
                 while (rs.next()) {
                     ProfissionalSaudeTO profissional = new ProfissionalSaudeTO();
                     profissional.setIdProfissionalSaude(rs.getLong("id_profissional_saude"));
@@ -201,9 +205,49 @@ public class AtendimentoDAO {
             }
         } catch (SQLException e) {
             System.out.println("Erro no comando SQL " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
+        return atendimentos;
+    }
+
+    /**
+     * Busca todos os atendimentos de um profissional de saúde
+     *
+     * @param idProfissional ID do profissional
+     * @return lista de objetos com os dados dos atendimentos encontrados
+     */
+    public ArrayList<AtendimentoTO> findAllByProfissional(Long idProfissional) {
+        String sql = "SELECT a.id_atendimento, a.fm_formato_atendimento, a.dt_data, a.hr_hora, a.lc_local, a.st_status, a.id_paciente FROM T_ELO_ATENDIMENTO a WHERE a.id_profissional_saude = ?";
+        ArrayList<AtendimentoTO> atendimentos = new ArrayList<>();
+
+        try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
+            ps.setLong(1, idProfissional);
+            ResultSet rs = ps.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    AtendimentoTO atendimento = new AtendimentoTO();
+                    atendimento.setIdAtendimento(rs.getLong("id_atendimento"));
+                    atendimento.setFormatoAtendimento(FormatoAtendimento.valueOf(rs.getString("fm_formato_atendimento")));
+                    atendimento.setData(rs.getDate("dt_data").toLocalDate());
+                    atendimento.setHora(rs.getTime("hr_hora").toLocalTime());
+                    atendimento.setLocal(rs.getString("lc_local"));
+                    atendimento.setStatus(StatusAtendimento.valueOf(rs.getString("st_status")));
+                    atendimento.setIdPaciente(rs.getLong("id_paciente"));
+                    atendimento.setIdProfissionalSaude(idProfissional);
+                    atendimentos.add(atendimento);
+                }
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro no comando SQL " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        } finally {
+            ConnectionFactory.closeConnection();
+        }
+
         return atendimentos;
     }
 }

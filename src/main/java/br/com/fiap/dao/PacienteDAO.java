@@ -3,21 +3,19 @@ package br.com.fiap.dao;
 import br.com.fiap.to.ColaboradorTO;
 import br.com.fiap.to.PacienteTO;
 
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class PacienteDAO {
     /**
      * Insere um novo paciente no banco de dados
+     *
      * @param pacienteTO objeto contendo os dados do paciente a ser inserido
      * @return mensagem informando o resultado da operação
      */
     public PacienteTO save(PacienteTO pacienteTO) {
 
-        String sql = "insert into T_ELO_PACIENTE (nc_nome_completo, dt_data_nascimento, dc_cpf, tl_telefone, em_email, dg_diagnostico) values (?,?,?,?,?,?)";
+        String sql = "insert into T_ELO_PACIENTE (nc_nome_completo, dt_data_nascimento, dc_cpf, tl_telefone, em_email,url_foto, dg_diagnostico) values (?,?,?,?,?,?,?)";
 
         try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
             ps.setString(1, pacienteTO.getNomeCompleto());
@@ -25,31 +23,36 @@ public class PacienteDAO {
             ps.setString(3, pacienteTO.getCpf());
             ps.setString(4, pacienteTO.getTelefone());
             ps.setString(5, pacienteTO.getEmail());
-            ps.setString(6, pacienteTO.getDiagnostico());
+            if (pacienteTO.getUrlFoto() != null) {
+                ps.setString(6, pacienteTO.getUrlFoto());
+            } else {
+                ps.setNull(6, Types.VARCHAR);
+            }
+            ps.setString(7, pacienteTO.getDiagnostico());
             if (ps.executeUpdate() > 0) {
                 return pacienteTO;
-            } else {
-                return null;
             }
-
+            return null;
         } catch (SQLException e) {
             System.out.println("Erro de SQL: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+
         } finally {
             ConnectionFactory.closeConnection();
         }
-        return null;
 
     }
 
 
     /**
      * Altera os dados de um paciente existente no banco de dados
+     *
      * @param pacienteTO objeto contendo os novos dados do paciente
      * @return mensagem informando o resultado da operação
      */
     public PacienteTO update(PacienteTO pacienteTO) {
 
-        String sql = "UPDATE T_ELO_PACIENTE set nc_nome_completo=?, dt_data_nascimento=?, dc_cpf=?, tl_telefone=?, em_email=?, dg_diagnostico=? where id_paciente=?";
+        String sql = "UPDATE T_ELO_PACIENTE set nc_nome_completo=?, dt_data_nascimento=?, dc_cpf=?, tl_telefone=?, em_email=?,url_foto=?, dg_diagnostico=? where id_paciente=?";
 
         try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
             ps.setString(1, pacienteTO.getNomeCompleto());
@@ -57,26 +60,29 @@ public class PacienteDAO {
             ps.setString(3, pacienteTO.getCpf());
             ps.setString(4, pacienteTO.getTelefone());
             ps.setString(5, pacienteTO.getEmail());
-            ps.setString(6, pacienteTO.getDiagnostico());
-            ps.setLong(7, pacienteTO.getIdPaciente());
+            if (pacienteTO.getUrlFoto() != null) {
+                ps.setString(6, pacienteTO.getUrlFoto());
+            } else {
+                ps.setNull(6, Types.VARCHAR);
+            }
+            ps.setString(7, pacienteTO.getDiagnostico());
+            ps.setLong(8, pacienteTO.getIdPaciente());
 
             if (ps.executeUpdate() > 0) {
                 return pacienteTO;
-            } else {
-                return null;
-            }
-
+            }return null;
         } catch (SQLException e) {
             System.out.println("Erro de SQL: " + e.getMessage());
-        }finally {
+            throw new RuntimeException(e.getMessage());
+        } finally {
             ConnectionFactory.closeConnection();
         }
-        return null;
     }
 
 
     /**
      * Exclui um paciente do banco de dados
+     *
      * @param id do paciente a ser excluído
      * @return mensagem informando o resultado da operação
      */
@@ -87,18 +93,18 @@ public class PacienteDAO {
         try (PreparedStatement ps = ConnectionFactory.getConnection().prepareStatement(sql)) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             System.out.println("Erro no comando SQL " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
-        return false;
     }
 
 
     /**
      * Busca todos os pacientes no banco de dados
+     *
      * @return lista de objetos de pacienteTO com todos os pacientes ou null se não encontrar
      */
     public ArrayList<PacienteTO> findAll() {
@@ -115,14 +121,17 @@ public class PacienteDAO {
                     pacienteEncontrado.setCpf(rs.getString("dc_cpf"));
                     pacienteEncontrado.setDataNascimento(rs.getDate("dt_data_nascimento").toLocalDate());
                     pacienteEncontrado.setEmail(rs.getString("em_email"));
+                    pacienteEncontrado.setUrlFoto(rs.getString("url_foto"));
                     pacienteEncontrado.setDiagnostico(rs.getString("dg_diagnostico"));
                     pacientes.add(pacienteEncontrado);
-                }}else{
+                }
+            } else {
                 return null;
             }
         } catch (SQLException e) {
             System.out.println("Erro na consulta: " + e.getMessage());
-        }finally {
+            throw new RuntimeException(e.getMessage());
+        } finally {
             ConnectionFactory.closeConnection();
         }
         return pacientes;
@@ -130,6 +139,7 @@ public class PacienteDAO {
 
     /**
      * Busca um paciente específico no banco de dados
+     *
      * @param id do paciente a ser buscado
      * @return objeto PacienteTO com os dados do paciente encontrado ou null
      */
@@ -147,12 +157,14 @@ public class PacienteDAO {
                 pacienteEncontrado.setDataNascimento(rs.getDate("dt_data_nascimento").toLocalDate());
                 pacienteEncontrado.setTelefone(rs.getString("tl_telefone"));
                 pacienteEncontrado.setEmail(rs.getString("em_email"));
+                pacienteEncontrado.setUrlFoto(rs.getString("url_foto"));
                 pacienteEncontrado.setDiagnostico(rs.getString("dg_diagnostico"));
-            }else {
+            } else {
                 return null;
             }
         } catch (SQLException e) {
             System.out.println("Erro no comando SQL " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
@@ -161,6 +173,7 @@ public class PacienteDAO {
 
     /**
      * Busca um paciente associado a um acompanhante específico
+     *
      * @param idAcompanhante ID do acompanhante
      * @return objeto PacienteTO com os dados do paciente encontrado ou null se não encontrar
      */
@@ -178,12 +191,14 @@ public class PacienteDAO {
                 pacienteEncontrado.setDataNascimento(rs.getDate("dt_data_nascimento").toLocalDate());
                 pacienteEncontrado.setTelefone(rs.getString("tl_telefone"));
                 pacienteEncontrado.setEmail(rs.getString("em_email"));
+                pacienteEncontrado.setUrlFoto(rs.getString("url_foto"));
                 pacienteEncontrado.setDiagnostico(rs.getString("dg_diagnostico"));
-            } else{
+            } else {
                 return null;
             }
         } catch (SQLException e) {
             System.out.println("Erro no comando SQL " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }
@@ -192,6 +207,7 @@ public class PacienteDAO {
 
     /**
      * Busca um paciente específico no banco de dados a partir do CPF
+     *
      * @param cpf do paciente a ser buscado
      * @return objeto PacienteTO com os dados do paciente encontrado ou null
      */
@@ -209,12 +225,14 @@ public class PacienteDAO {
                 pacienteEncontrado.setDataNascimento(rs.getDate("dt_data_nascimento").toLocalDate());
                 pacienteEncontrado.setTelefone(rs.getString("tl_telefone"));
                 pacienteEncontrado.setEmail(rs.getString("em_email"));
+                pacienteEncontrado.setUrlFoto(rs.getString("url_foto"));
                 pacienteEncontrado.setDiagnostico(rs.getString("dg_diagnostico"));
-            }else {
+            } else {
                 return null;
             }
         } catch (SQLException e) {
             System.out.println("Erro no comando SQL " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } finally {
             ConnectionFactory.closeConnection();
         }

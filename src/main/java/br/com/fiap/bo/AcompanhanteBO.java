@@ -12,10 +12,10 @@ import java.util.ArrayList;
 public class AcompanhanteBO {
     public AcompanhanteTO save(AcompanhanteTO acompanhanteTO) throws AcompanhanteException, PacienteException {
 
-        String telefone = acompanhanteTO.getTelefone();
-        String cpf = acompanhanteTO.getCpf();
-        acompanhanteTO.setCpf(cpf.replace(".", "").replace("-", ""));
-        acompanhanteTO.setTelefone(telefone.replace("(", "").replace("-", "").replace(")", "").replace(" ", ""));
+        String telefone = acompanhanteTO.getTelefone().replace("(", "").replace("-", "").replace(")", "").replace(" ", "");
+        String cpf = acompanhanteTO.getCpf().replace(".", "").replace("-", "");
+        acompanhanteTO.setCpf(cpf);
+        acompanhanteTO.setTelefone(telefone);
 
         PacienteDAO pacienteDAO = new PacienteDAO();
 
@@ -24,7 +24,7 @@ public class AcompanhanteBO {
         }
         AcompanhanteDAO acompanhanteDAO = new AcompanhanteDAO();
 
-        if (acompanhanteDAO.findByCpf(acompanhanteTO.getCpf()) != null) {
+        if (acompanhanteDAO.findByCpf(cpf) != null) {
             throw new AcompanhanteException("Já existe um acompanhante cadastrado com o CPF informado");
         }
 
@@ -38,21 +38,29 @@ public class AcompanhanteBO {
     }
 
     public AcompanhanteTO update(AcompanhanteTO acompanhanteTO) throws AcompanhanteException, PacienteException {
+
+        String telefone = acompanhanteTO.getTelefone().replace("(", "").replace("-", "").replace(")", "").replace(" ", "");
+        String cpf = acompanhanteTO.getCpf().replace(".", "").replace("-", "");
+        acompanhanteTO.setCpf(cpf);
+        acompanhanteTO.setTelefone(telefone);
+
         AcompanhanteDAO acompanhanteDAO = new AcompanhanteDAO();
+
+        PacienteDAO pacienteDAO = new PacienteDAO();
 
         if (acompanhanteDAO.findById(acompanhanteTO.getIdAcompanhante()) == null) {
             throw new AcompanhanteException("Não existe nenhum acompanhante com o ID informado");
         }
-        PacienteDAO pacienteDAO = new PacienteDAO();
 
         if (pacienteDAO.findById(acompanhanteTO.getIdPaciente()) == null) {
             throw new PacienteException("Não existe um paciente com o ID informado.");
         }
 
-        String telefone = acompanhanteTO.getTelefone();
-        String cpf = acompanhanteTO.getCpf();
-        acompanhanteTO.setCpf(cpf.replace(".", "").replace("-", ""));
-        acompanhanteTO.setTelefone(telefone.replace("(", "").replace("-", "").replace(")", "").replace(" ", ""));
+        AcompanhanteTO acompanhanteEncontrado = acompanhanteDAO.findByCpf(cpf);
+
+        if (acompanhanteEncontrado != null && !acompanhanteEncontrado.getIdAcompanhante().equals(acompanhanteTO.getIdAcompanhante())) {
+            throw new AcompanhanteException("O CPF informado já pertence a outro acompanhante.");
+        }
 
         return acompanhanteDAO.update(acompanhanteTO);
     }

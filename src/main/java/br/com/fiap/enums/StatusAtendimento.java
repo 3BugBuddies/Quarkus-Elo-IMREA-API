@@ -5,5 +5,5 @@ package br.com.fiap.enums;
  * @version 1.0
  */
 public enum StatusAtendimento {
-    MARCADO, CANCELADO, REMARCADO
+    MARCADO, CANCELADO, REMARCADO, CONCLUIDO;
 }

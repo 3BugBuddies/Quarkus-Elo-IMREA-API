@@ -1,32 +1,44 @@
 package br.com.fiap.bo;
 
 import br.com.fiap.dao.ColaboradorDAO;
+import br.com.fiap.exception.ColaboradorException;
 import br.com.fiap.to.ColaboradorTO;
 
 import java.util.ArrayList;
 
 public class ColaboradorBO {
-    public ColaboradorTO save(ColaboradorTO colaboradorTO) {
-        String telefone = colaboradorTO.getTelefone();
-        String cpf = colaboradorTO.getCpf();
+    public ColaboradorTO save(ColaboradorTO colaboradorTO) throws ColaboradorException {
+        String telefone = colaboradorTO.getTelefone().replace("(", "").replace("-", "").replace(")", "").replace(" ", "");
+        String cpf = colaboradorTO.getCpf().replace(".", "").replace("-", "");
 
-        colaboradorTO.setCpf(cpf.replace(".", "").replace("-", ""));
-        colaboradorTO.setTelefone(telefone.replace("(", "").replace("-", "").replace(")", "").replace(" ", ""));
+        colaboradorTO.setCpf(cpf);
+        colaboradorTO.setTelefone(telefone);
 
         ColaboradorDAO colaboradorDAO = new ColaboradorDAO();
+
+        if (colaboradorDAO.findByCpf(cpf) != null) {
+            throw new ColaboradorException("O CPF informado já pertence a outro colaborador.");
+        }
+
         return colaboradorDAO.save(colaboradorTO);
     }
 
-    public ColaboradorTO update(ColaboradorTO colaboradorTO) {
-        String telefone = colaboradorTO.getTelefone();
-        String cpf = colaboradorTO.getCpf();
-        colaboradorTO.setCpf(cpf.replace(".", "").replace("-", ""));
-        colaboradorTO.setTelefone(telefone.replace("(", "").replace("-", "").replace(")", "").replace(" ", ""));
+    public ColaboradorTO update(ColaboradorTO colaboradorTO) throws ColaboradorException {
+        String telefone = colaboradorTO.getTelefone().replace("(", "").replace("-", "").replace(")", "").replace(" ", "");
+        String cpf = colaboradorTO.getCpf().replace(".", "").replace("-", "");
+
+        colaboradorTO.setCpf(cpf);
+        colaboradorTO.setTelefone(telefone);
 
         ColaboradorDAO colaboradorDAO = new ColaboradorDAO();
         if (colaboradorDAO.findById(colaboradorTO.getIdColaborador()) == null) {
-            throw new RuntimeException("Colaborador não encontrado");
+            throw new ColaboradorException("Não existe nenhum colaborador com o ID informado para ser atualizado");
         }
+        ColaboradorTO colaboradorEncontrado = colaboradorDAO.findByCpf(cpf);
+        if (colaboradorEncontrado != null && !colaboradorEncontrado.getIdColaborador().equals(colaboradorTO.getIdColaborador())) {
+            throw new ColaboradorException("O CPF informado já pertence a outro colaborador.");
+        }
+
         return colaboradorDAO.update(colaboradorTO);
     }
     public boolean delete(Long id) {

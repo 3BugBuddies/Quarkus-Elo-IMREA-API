@@ -24,6 +24,8 @@ public abstract class PessoaTO {
     @Email (message = "O atributo e-mail deve seguir um formato válido")
     @NotNull (message = "O atributo e-mail é obrigatório")
     private String email;
+    private String urlFoto;
+
 
     public PessoaTO() {
     }
@@ -66,5 +68,13 @@ public abstract class PessoaTO {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getUrlFoto() {
+        return urlFoto;
+    }
+
+    public void setUrlFoto(String urlFoto) {
+        this.urlFoto = urlFoto;
     }
 }

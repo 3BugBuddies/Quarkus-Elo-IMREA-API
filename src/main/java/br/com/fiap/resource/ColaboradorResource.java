@@ -1,7 +1,9 @@
 package br.com.fiap.resource;
 
 import br.com.fiap.bo.ColaboradorBO;
+import br.com.fiap.exception.ColaboradorException;
 import br.com.fiap.to.ColaboradorTO;
+import br.com.fiap.to.ErrorResponse;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -13,75 +15,64 @@ import java.util.ArrayList;
 public class ColaboradorResource {
     private ColaboradorBO colaboradorBO = new ColaboradorBO();
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findAll() {
-        ArrayList<ColaboradorTO> resultado = colaboradorBO.findAll();
-        Response.ResponseBuilder response = null;
-        if (resultado != null) {
-            response = Response.ok(); // 200 - OK
-        }
-        else {
-            response = Response.status(404);  // 404 - NOT FOUND
-        }
-        response.entity(resultado);
-        return response.build();
-    }
-
-    @GET
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findByCodigo(@PathParam("id") Long id) {
-        ColaboradorTO resultado = colaboradorBO.findById(id);
-        Response.ResponseBuilder response = null;
-        if (resultado != null) {
-            response = Response.ok();  // 200 (OK)
-        } else {
-            response = Response.status(404);  // 404 (NOT FOUND)
-        }
-        response.entity(resultado);
-        return response.build();
-    }
-
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response save(@Valid ColaboradorTO colaborador) {
-        ColaboradorTO resultado = colaboradorBO.save(colaborador);
-        Response.ResponseBuilder response = null;
-        if (resultado != null){
-            response = Response.created(null);
-        } else {
-            response = Response.status(400);
-        }
-        response.entity(resultado);
-        return response.build();
-    }
+        try {
+            ColaboradorTO resultado = colaboradorBO.save(colaborador);
+            if (resultado == null) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
+            return Response.status(Response.Status.CREATED).entity(resultado).build();
 
-    @DELETE
-    @Path("/{codigo}")
-    public Response delete(@PathParam("codigo") Long codigo) {
-        Response.ResponseBuilder response = null;
-        if (colaboradorBO.delete(codigo)){
-            response = Response.status(204);  // 204 - NO CONTENT
-        } else {
-            response = Response.status(404);  // 404 - NOT FOUND
+        } catch (ColaboradorException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
-        return response.build();
     }
 
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(@Valid ColaboradorTO colaborador, @PathParam("id") Long id) {
-        colaborador.setIdColaborador(id);
-        ColaboradorTO resultado = colaboradorBO.update(colaborador);
-        Response.ResponseBuilder response = null;
-        if (resultado != null){
-            response = Response.created(null);  // 201 - CREATED
-        } else {
-            response = Response.status(400);  // 400 - BAD REQUEST
+        try {
+            colaborador.setIdColaborador(id);
+            ColaboradorTO resultado = colaboradorBO.update(colaborador);
+            if (resultado == null) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
+            return Response.status(Response.Status.OK).entity(resultado).build();
+        } catch (ColaboradorException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
-        response.entity(resultado);
-        return response.build();
     }
+
+    @DELETE
+    @Path("/{codigo}")
+    public Response delete(@PathParam("codigo") Long codigo) {
+        if (colaboradorBO.delete(codigo)) {
+            return Response.status(Response.Status.NO_CONTENT).build();
+        }
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findAll() {
+        ArrayList<ColaboradorTO> resultado = colaboradorBO.findAll();
+        return Response.status(Response.Status.OK).entity(resultado).build();
+    }
+
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findById(@PathParam("id") Long id) {
+        ColaboradorTO resultado = colaboradorBO.findById(id);
+        if (resultado == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } return Response.status(Response.Status.OK).entity(resultado).build();
+    }
+
 }

@@ -1,89 +1,78 @@
 package br.com.fiap.resource;
 
-import br.com.fiap.bo.ColaboradorBO;
 import br.com.fiap.bo.ProfissionalSaudeBO;
-import br.com.fiap.to.ColaboradorTO;
+import br.com.fiap.exception.ProfissionalSaudeException;
+import br.com.fiap.to.ErrorResponse;
 import br.com.fiap.to.ProfissionalSaudeTO;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
 import java.util.ArrayList;
 
 @Path("/profissionalsaude")
 public class ProfissionalSaudeResource {
     private ProfissionalSaudeBO profissionalSaudeBO = new ProfissionalSaudeBO();
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findAll() {
-        ArrayList<ProfissionalSaudeTO> resultado = profissionalSaudeBO.findAll();
-        Response.ResponseBuilder response = null;
-        if (resultado != null) {
-            response = Response.ok(); // 200 - OK
-        }
-        else {
-            response = Response.status(404);  // 404 - NOT FOUND
-        }
-        response.entity(resultado);
-        return response.build();
-    }
-
-    @GET
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findByCodigo(@PathParam("id") Long id) {
-        ProfissionalSaudeTO resultado = profissionalSaudeBO.findById(id);
-        Response.ResponseBuilder response = null;
-        if (resultado != null) {
-            response = Response.ok();  // 200 (OK)
-        } else {
-            response = Response.status(404);  // 404 (NOT FOUND)
-        }
-        response.entity(resultado);
-        return response.build();
-    }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response save(@Valid ProfissionalSaudeTO profissionalSaude) {
-        ProfissionalSaudeTO resultado = profissionalSaudeBO.save(profissionalSaude);
-        Response.ResponseBuilder response = null;
-        if (resultado != null){
-            response = Response.created(null);  // 201 - CREATED
-        } else {
-            response = Response.status(400);  // 401 - BAD REQUEST
-        }
-        response.entity(resultado);
-        return response.build();
-    }
+        try{
+            ProfissionalSaudeTO resultado = profissionalSaudeBO.save(profissionalSaude);
+            if (resultado == null) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
+            return Response.status(Response.Status.CREATED).entity(resultado).build();
 
-    @DELETE
-    @Path("/{codigo}")
-    public Response delete(@PathParam("codigo") Long codigo) {
-        Response.ResponseBuilder response = null;
-        if (profissionalSaudeBO.delete(codigo)){
-            response = Response.status(204);  // 204 - NO CONTENT
-        } else {
-            response = Response.status(404);  // 404 - NOT FOUND
+        } catch (ProfissionalSaudeException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
-        return response.build();
     }
 
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(@Valid ProfissionalSaudeTO profissionalSaude, @PathParam("id") Long id) {
-        profissionalSaude.setIdProfissionalSaude(id);
-        ProfissionalSaudeTO resultado = profissionalSaudeBO.update(profissionalSaude);
-        Response.ResponseBuilder response = null;
-        if (resultado != null){
-            response = Response.created(null);  // 201 - CREATED
-        } else {
-            response = Response.status(400);  // 400 - BAD REQUEST
+        try {
+            profissionalSaude.setIdProfissionalSaude(id);
+            ProfissionalSaudeTO resultado = profissionalSaudeBO.update(profissionalSaude);
+            if (resultado == null) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
+            return Response.status(Response.Status.OK).entity(resultado).build();
+        } catch (ProfissionalSaudeException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
-        response.entity(resultado);
-        return response.build();
     }
+
+    @DELETE
+    @Path("/{codigo}")
+    public Response delete(@PathParam("codigo") Long codigo) {
+        if (profissionalSaudeBO.delete(codigo)) {
+            return Response.status(Response.Status.NO_CONTENT).build();
+        }
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findAll() {
+        ArrayList<ProfissionalSaudeTO> resultado = profissionalSaudeBO.findAll();
+        return Response.status(Response.Status.OK).entity(resultado).build();
+    }
+
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findById(@PathParam("id") Long id) {
+        ProfissionalSaudeTO resultado = profissionalSaudeBO.findById(id);
+        if (resultado == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } return Response.status(Response.Status.OK).entity(resultado).build();
+    }
+
 }

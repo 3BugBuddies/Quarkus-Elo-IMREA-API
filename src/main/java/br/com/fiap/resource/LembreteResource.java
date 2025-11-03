@@ -1,6 +1,8 @@
 package br.com.fiap.resource;
 
 import br.com.fiap.bo.LembreteBO;
+import br.com.fiap.exception.*;
+import br.com.fiap.to.ErrorResponse;
 import br.com.fiap.to.LembreteTO;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -9,81 +11,87 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.ArrayList;
 
-@Path("/Lembrete")
+@Path("/lembrete")
 public class LembreteResource {
     private LembreteBO lembreteBO = new LembreteBO();
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response save(@Valid LembreteTO Lembrete) {
-        LembreteTO resultado = lembreteBO.save(Lembrete);
-        Response.ResponseBuilder response = null;
-        if (resultado != null){
-            response = Response.created(null);  // 201 - CREATED
-        } else {
-            response = Response.status(400);  // 401 - BAD REQUEST
+    public Response save(@Valid LembreteTO lembrete) {
+        try {
+            LembreteTO resultado = lembreteBO.save(lembrete);
+            if (resultado == null) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
+            return Response.status(Response.Status.CREATED).entity(resultado).build();
+        } catch (AtendimentoException | ColaboradorException | PacienteException | ProfissionalSaudeException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
-        response.entity(resultado);
-        return response.build();
     }
 
     @DELETE
-    @Path("/{codigo}")
-    public Response delete(@PathParam("codigo") Long codigo) {
-        Response.ResponseBuilder response = null;
-        if (lembreteBO.delete(codigo)){
-            response = Response.status(204);  // 204 - NO CONTENT
+    @Path("/{id}")
+    public Response delete(@PathParam("id") Long id) {
+        if (lembreteBO.delete(id)) {
+            return Response.status(Response.Status.NO_CONTENT).build();
         } else {
-            response = Response.status(404);  // 404 - NOT FOUND
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return response.build();
     }
 
     @PUT
-    @Path("/{id}")
+    @Path("/reenviar/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response update(@Valid LembreteTO Lembrete, @PathParam("id") Long id) {
-        Lembrete.setIdLembrete(id);
-        LembreteTO resultado = lembreteBO.update(Lembrete);
-        Response.ResponseBuilder response = null;
-        if (resultado != null){
-            response = Response.created(null);  // 201 - CREATED
-        } else {
-            response = Response.status(400);  // 400 - BAD REQUEST
+    public Response reenviarLembrete(@PathParam("id") Long id) {
+        try {
+            LembreteTO resultado = lembreteBO.reenviar(id);
+            if (resultado == null) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
+            return Response.status(Response.Status.OK).entity(resultado).build();
+        } catch (LembreteException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
-        response.entity(resultado);
-        return response.build();
     }
 
+
+    @GET
+    @Path("/{id}")
+    public Response findById(@PathParam("id") Long id) {
+        LembreteTO resultado = lembreteBO.findById(id);
+        if (resultado == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(resultado).build();
+    }
 
     @GET
     @Path("/paciente/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findAllByPaciente(@PathParam("id") Long id) {
-        ArrayList<LembreteTO> resultado = lembreteBO.findAllByPaciente(id);
-        Response.ResponseBuilder response = null;
-        if (resultado != null) {
-            response = Response.ok();  // 200 (OK)
-        } else {
-            response = Response.status(404);  // 404 (NOT FOUND)
+    public Response findAllByPaciente(@PathParam("id") Long idPaciente) {
+        try {
+            ArrayList<LembreteTO> resultado = lembreteBO.findAllByPaciente(idPaciente);
+            return Response.ok(resultado).build();
+        } catch (PacienteException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
-        response.entity(resultado);
-        return response.build();
     }
 
     @GET
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findByCodigo(@PathParam("id") Long id) {
-        LembreteTO resultado = lembreteBO.findById(id);
-        Response.ResponseBuilder response = null;
-        if (resultado != null) {
-            response = Response.ok();  // 200 (OK)
-        } else {
-            response = Response.status(404);  // 404 (NOT FOUND)
+    @Path("/paciente/{id}/ultimo")
+    public Response findUltimoByPaciente(@PathParam("id") Long idPaciente) {
+        try {
+            LembreteTO resultado = lembreteBO.findUltimoByPaciente(idPaciente);
+            if (resultado == null) {
+                return Response.status(Response.Status.OK).entity(null).build();
+            }
+            return Response.ok(resultado).build();
+        } catch (PacienteException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
-        response.entity(resultado);
-        return response.build();
     }
 
 }

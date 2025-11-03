@@ -10,15 +10,15 @@ import java.util.ArrayList;
 
 public class PacienteBO {
     public PacienteTO save(PacienteTO pacienteTO) throws PacienteException {
-        String telefone = pacienteTO.getTelefone();
-        pacienteTO.setTelefone(telefone.replace("(", "").replace("-", "").replace(")", "").replace(" ", ""));
+        String telefone = pacienteTO.getTelefone().replace("(", "").replace("-", "").replace(")", "").replace(" ", "");
+        String cpf = pacienteTO.getCpf().replace(".", "").replace("-", "");
 
-        String cpf = pacienteTO.getCpf();
-        pacienteTO.setCpf(cpf.replace(".", "").replace("-", ""));
+        pacienteTO.setTelefone(telefone);
+        pacienteTO.setCpf(cpf);
 
         PacienteDAO pacienteDAO = new PacienteDAO();
 
-        if (pacienteDAO.findByCpf(pacienteTO.getCpf()) != null) {
+        if (pacienteDAO.findByCpf(cpf) != null) {
             throw new PacienteException("Já existe um paciente cadastrado com o CPF informado");
         }
 
@@ -27,17 +27,22 @@ public class PacienteBO {
     }
 
     public PacienteTO update(PacienteTO pacienteTO) throws PacienteException {
-        PacienteDAO pacienteDAO = new PacienteDAO();
 
+        String telefone = pacienteTO.getTelefone().replace("(", "").replace("-", "").replace(")", "").replace(" ", "");
+        String cpf = pacienteTO.getCpf().replace(".", "").replace("-", "");
+
+        pacienteTO.setCpf(cpf);
+        pacienteTO.setTelefone(telefone);
+
+        PacienteDAO pacienteDAO = new PacienteDAO();
         if (pacienteDAO.findById(pacienteTO.getIdPaciente()) == null) {
             throw new PacienteException("Não existe nenhum paciente com o ID informado para ser atualizado");
         }
 
-        String telefone = pacienteTO.getTelefone();
-        String cpf = pacienteTO.getCpf();
-
-        pacienteTO.setCpf(cpf.replace(".", "").replace("-", ""));
-        pacienteTO.setTelefone(telefone.replace("(", "").replace("-", "").replace(")", "").replace(" ", ""));
+        PacienteTO pacienteEncontrado = pacienteDAO.findByCpf(cpf);
+        if (pacienteEncontrado != null && !pacienteEncontrado.getIdPaciente().equals(pacienteTO.getIdPaciente())) {
+            throw new PacienteException("O CPF informado já pertence a outro paciente.");
+        }
 
         return pacienteDAO.update(pacienteTO);
     }
