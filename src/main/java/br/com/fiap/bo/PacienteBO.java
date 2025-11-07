@@ -2,6 +2,7 @@ package br.com.fiap.bo;
 
 import br.com.fiap.dao.AcompanhanteDAO;
 import br.com.fiap.dao.AtendimentoDAO;
+import br.com.fiap.dao.LembreteDAO;
 import br.com.fiap.dao.PacienteDAO;
 import br.com.fiap.exception.AcompanhanteException;
 import br.com.fiap.exception.PacienteException;
@@ -18,6 +19,7 @@ public class PacienteBO {
     private PacienteDAO pacienteDAO;
     private AtendimentoDAO atendimentoDAO;
     private AcompanhanteDAO acompanhanteDAO;
+    private LembreteDAO lembreteDAO;
 
     /**
      * Salva um novo paciente no banco de dados após validar os dados fornecidos.
@@ -106,9 +108,21 @@ public class PacienteBO {
      * @param id ID do paciente a ser recuperado.
      * @return PacienteTO do paciente encontrado ou null se não for encontrado.
      */
-    public PacienteTO findById(Long id) {
+    public PacienteTO findById(Long id) throws PacienteException {
         pacienteDAO = new PacienteDAO();
-        return pacienteDAO.findById(id);
+        acompanhanteDAO = new AcompanhanteDAO();
+        lembreteDAO = new LembreteDAO();
+        atendimentoDAO = new AtendimentoDAO();
+
+        PacienteTO paciente = pacienteDAO.findById(id);
+        if (paciente == null) {
+            throw new PacienteException("Não existe nenhum paciente com o id informado.");
+        }
+        paciente.setAcompanhante(acompanhanteDAO.findAllByPaciente(id));
+        paciente.setLembrete(lembreteDAO.findAllByPaciente(id));
+        paciente.setAtendimento(atendimentoDAO.findAllByPaciente(id));
+
+        return paciente;
     }
 
     /**
@@ -117,12 +131,21 @@ public class PacienteBO {
      * @return PacienteTO do paciente encontrado.
      * @throws AcompanhanteException se não existir nenhum acompanhante com o ID informado.
      */
-    public PacienteTO findByAcompanhante(Long idAcompanhante) throws AcompanhanteException {
+    public PacienteTO findByAcompanhante(Long idAcompanhante) throws AcompanhanteException, PacienteException {
         pacienteDAO = new PacienteDAO();
         acompanhanteDAO = new AcompanhanteDAO();
+        lembreteDAO = new LembreteDAO();
+        atendimentoDAO = new AtendimentoDAO();
         if(acompanhanteDAO.findById(idAcompanhante) == null) {
             throw new AcompanhanteException("Não existe nenhum acompanhante com o ID informado");
         }
-        return pacienteDAO.findByAcompanhante(idAcompanhante);
+        PacienteTO paciente = pacienteDAO.findByAcompanhante(idAcompanhante);
+        if (paciente == null) {
+            throw new PacienteException("Não existe nenhum paciente vinculado ao acompanhante de ID informado");
+        }
+        paciente.setAcompanhante(acompanhanteDAO.findAllByPaciente(paciente.getIdPaciente()));
+        paciente.setAtendimento(atendimentoDAO.findAllByPaciente(paciente.getIdPaciente()));
+        paciente.setLembrete(lembreteDAO.findAllByPaciente(paciente.getIdPaciente()));
+        return paciente;
     }
 }

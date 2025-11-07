@@ -19,7 +19,7 @@ public class PacienteResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response save(@Valid PacienteTO paciente) {
-        try{
+        try {
             PacienteTO resultado = pacienteBO.save(paciente);
             if (resultado == null) {
                 return Response.status(Response.Status.BAD_REQUEST).build();
@@ -52,7 +52,7 @@ public class PacienteResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") Long id) {
-        try{
+        try {
             if (pacienteBO.delete(id)) {
                 return Response.status(Response.Status.NO_CONTENT).build();
             }
@@ -76,10 +76,17 @@ public class PacienteResource {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response findById(@PathParam("id") Long id) {
-        PacienteTO resultado = pacienteBO.findById(id);
-        if (resultado == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        } return Response.status(Response.Status.OK).entity(resultado).build();
+        try {
+            PacienteTO resultado = pacienteBO.findById(id);
+            if (resultado == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            return Response.status(Response.Status.OK).entity(resultado).build();
+        } catch (PacienteException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.NOT_FOUND.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.NOT_FOUND).entity(errorResponse).build();
+        }
+
     }
 
     @GET
@@ -90,10 +97,14 @@ public class PacienteResource {
             PacienteTO resultado = pacienteBO.findByAcompanhante(id);
             if (resultado == null) {
                 return Response.status(Response.Status.NOT_FOUND).build();
-            } return Response.status(Response.Status.OK).entity(resultado).build();
+            }
+            return Response.status(Response.Status.OK).entity(resultado).build();
         } catch (AcompanhanteException e) {
             ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+        } catch (PacienteException e) {
+            ErrorResponse errorResponse = new ErrorResponse(Response.Status.NOT_FOUND.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.NOT_FOUND).entity(errorResponse).build();
         }
     }
 
