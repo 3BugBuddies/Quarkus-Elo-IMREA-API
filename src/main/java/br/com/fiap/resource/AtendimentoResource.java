@@ -117,6 +117,8 @@ public class AtendimentoResource {
         } catch (PacienteException e) {
             ErrorResponse errorResponse = new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
     }
 
