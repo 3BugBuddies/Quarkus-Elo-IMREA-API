@@ -1,5 +1,6 @@
 package br.com.fiap.to;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -9,7 +10,9 @@ import jakarta.validation.constraints.NotBlank;
 public class ProfissionalSaudeTO extends PessoaTO {
     private Long idProfissionalSaude;
     @NotBlank(message = "O atributo tipo do documento é obrigatório")
+    @Max(value = 20,message = "O atributo tipo do documento pode ter no máximo 20 caracteres")
     private String tipoDocumento;
+    @Max(value = 12, message = "O atributo documento pode ter no máximo 12 caracteres")
     @NotBlank(message = "O atributo documento é obrigatório")
     private String documento;
     @NotBlank(message = "O atributo especialidade é obrigatório")
